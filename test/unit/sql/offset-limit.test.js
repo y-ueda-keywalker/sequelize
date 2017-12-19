@@ -25,8 +25,8 @@ suite(Support.getTestDialectTeaser('SQL'), () => {
     };
 
     testsql({
-      limit: 10, //when no order by present, one is automagically prepended, test it's existence
-      model:{primaryKeyField:'id', name:'tableRef'}
+      limit: 10, //when no order by present, one is automagically prepended, test its existence
+      model: {primaryKeyField: 'id', name: 'tableRef'}
     }, {
       default: ' LIMIT 10',
       mssql: ' ORDER BY [tableRef].[id] OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY'

@@ -103,7 +103,7 @@ Project.hasOne(User, { foreignKey: 'initiator_id' })
 */
  
 Project.hasOne(User, { as: 'Initiator' })
-// Now you will get Project#getInitiator and Project#setInitiator
+// Now you will get Project.getInitiator and Project.setInitiator
  
 // Or let's define some self references
 const Person = sequelize.define('person', { /* ... */})
@@ -116,8 +116,8 @@ Person.hasOne(Person, {as: 'Father', foreignKey: 'DadId'})
 // this will add the attribute DadId to Person
  
 // In both cases you will be able to do:
-Person#setFather
-Person#getFather
+Person.setFather
+Person.getFather
  
 // If you need to join a table twice you can double join the same table
 Team.hasOne(Game, {as: 'HomeTeam', foreignKey : 'homeTeamId'});
@@ -179,7 +179,7 @@ When information about association is present in **target** model we can use `ha
 Coach.hasOne(Team)  // `coachId` will be added on Team / Target model
 ```
 
-## One-To-Many associations
+## One-To-Many associations (hasMany)
 
 One-To-Many associations are connecting one source with multiple targets. The targets however are again connected to exactly one specific source.
 ```js
@@ -191,8 +191,7 @@ const Project = sequelize.define('project', {/* ... */})
 Project.hasMany(User, {as: 'Workers'})
 ```
 
-This will add the attribute `projectId` or `project_id` to User. Instances of Project will get the accessors `getWorkers` and `setWorkers`. We could just leave it the way it is and let it be a one-way association.
-But we want more! Let's define it the other way around by creating a many to many association in the next section:
+This will add the attribute `projectId` or `project_id` to User. Instances of Project will get the accessors `getWorkers` and `setWorkers`. 
 
 Sometimes you may need to associate records on different columns, you may use `sourceKey` option:
 
@@ -205,6 +204,7 @@ Country.hasMany(City, {foreignKey: 'countryCode', sourceKey: 'isoCode'});
 City.belongsTo(Country, {foreignKey: 'countryCode', targetKey: 'isoCode'});
 ```
 
+So far we dealt with a one-way association. But we want more! Let's define it the other way around by creating a many to many association in the next section.
 
 ## Belongs-To-Many associations
 
@@ -540,11 +540,11 @@ task2.setProject(null).then(function() {
 })
 ```
 
-For hasOne/belongsTo its basically the same:
+For hasOne/belongsTo it's basically the same:
 
 ```js
 Task.hasOne(User, {as: "Author"})
-Task#setAuthor(anAuthor)
+Task.setAuthor(anAuthor)
 ```
 
 Adding associations to a relation with a custom join table can be done in two ways (continuing with the associations defined in the previous chapter):
@@ -653,7 +653,7 @@ The relation between task and user injects the `user_id` foreign key on tasks, a
 
 For 1:1 and 1:m associations the default option is `SET NULL` for deletion, and `CASCADE` for updates. For n:m, the default for both is `CASCADE`. This means, that if you delete or update a row from one side of an n:m association, all the rows in the join table referencing that row will also be deleted or updated.
 
-Adding constraints between tables means that tables must be created in the database in a certain order, when using `sequelize.sync`. If Task has a reference to User, the User table must be created before the Task table can be created. This can sometimes lead to circular references, where sequelize cannot find an order in which to sync. Imagine a scenario of documents and versions. A document can have multiple versions, and for convenience, a document has an reference to it's current version.
+Adding constraints between tables means that tables must be created in the database in a certain order, when using `sequelize.sync`. If Task has a reference to User, the User table must be created before the Task table can be created. This can sometimes lead to circular references, where sequelize cannot find an order in which to sync. Imagine a scenario of documents and versions. A document can have multiple versions, and for convenience, a document has a reference to its current version.
 
 ```js
 const Document = this.sequelize.define('document', {
@@ -704,7 +704,7 @@ const Series = sequelize.define('series', {
   trainer_id: {
     type: DataTypes.INTEGER,
     references: {
-      model: "trainers",
+      model: "trainer",
       key: "id"
     }
   }

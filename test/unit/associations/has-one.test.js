@@ -2,6 +2,7 @@
 
 const chai = require('chai'),
   expect = chai.expect,
+  _         = require('lodash'),
   Support   = require(__dirname + '/../support'),
   DataTypes = require(__dirname + '/../../../lib/data-types'),
   current   = Support.sequelize;
@@ -14,20 +15,20 @@ describe(Support.getTestDialectTeaser('hasOne'), () => {
     User.hasOne(Task);
     expect(Task.rawAttributes.UserId).not.to.be.empty;
 
-    User.hasOne(Task, {as : 'Shabda'});
+    User.hasOne(Task, {as: 'Shabda'});
     expect(Task.rawAttributes.ShabdaId).not.to.be.empty;
   });
 
   it('should not override custom methods with association mixin', () => {
     const methods = {
-      getTask : 'get',
+      getTask: 'get',
       setTask: 'set',
       createTask: 'create'
     };
     const User = current.define('User');
     const Task = current.define('Task');
 
-    current.Utils._.each(methods, (alias, method) => {
+    _.each(methods, (alias, method) => {
       User.prototype[method] = function() {
         const realMethod = this.constructor.associations.task[alias];
         expect(realMethod).to.be.a('function');
@@ -39,7 +40,7 @@ describe(Support.getTestDialectTeaser('hasOne'), () => {
 
     const user = User.build();
 
-    current.Utils._.each(methods, (alias, method) => {
+    _.each(methods, (alias, method) => {
       expect(user[method]()).to.be.a('function');
     });
   });

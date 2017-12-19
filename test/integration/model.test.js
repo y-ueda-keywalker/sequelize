@@ -708,6 +708,29 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           expect(u.username).to.equal('A fancy name');
         });
     });
+
+    // https://github.com/sequelize/sequelize/issues/8406
+    it('should work if model is paranoid and only operator in where clause is a Symbol', function() {
+      const User = this.sequelize.define('User', { username: Sequelize.STRING }, { paranoid: true } );
+
+      return User.sync({ force: true})
+        .then(() => {
+          return User.create({ username: 'foo' });
+        })
+        .then(() => {
+          return User.findOne({
+            where: {
+              [Sequelize.Op.or]: [
+                { username: 'bar' },
+                { username: 'baz' }
+              ]
+            }
+          });
+        })
+        .then(user => {
+          expect(user).to.not.be.ok;
+        });
+    });
   });
 
   describe('findOrInitialize', () => {
@@ -1109,6 +1132,67 @@ describe(Support.getTestDialectTeaser('Model'), () => {
             expect(affectedRows).to.equal(0);
           });
         });
+      });
+    });
+
+    it('does not update soft deleted records when model is paranoid', function() {
+      const ParanoidUser = this.sequelize.define('ParanoidUser', { username: DataTypes.STRING }, { paranoid: true });
+
+      return this.sequelize.sync({ force: true }).then(() => {
+        return ParanoidUser.bulkCreate([
+          { username: 'user1' },
+          { username: 'user2' }
+        ]);
+      }).then(() => {
+        return ParanoidUser.destroy({
+          where: {
+            username: 'user1'
+          }
+        });
+      }).then(() => {
+        return ParanoidUser.update({ username: 'foo' }, {
+          where: {}
+        });
+      }).then(() => {
+        return ParanoidUser.findAll({
+          paranoid: false,
+          where: {
+            username: 'foo'
+          }
+        });
+      }).then(users => {
+        expect(users).to.have.lengthOf(1, 'should not update soft-deleted record');
+      });
+    });
+
+    it('updates soft deleted records when paranoid is overridden', function() {
+      const ParanoidUser = this.sequelize.define('ParanoidUser', { username: DataTypes.STRING }, { paranoid: true });
+
+      return this.sequelize.sync({ force: true }).then(() => {
+        return ParanoidUser.bulkCreate([
+          { username: 'user1' },
+          { username: 'user2' }
+        ]);
+      }).then(() => {
+        return ParanoidUser.destroy({
+          where: {
+            username: 'user1'
+          }
+        });
+      }).then(() => {
+        return ParanoidUser.update({ username: 'foo' }, {
+          where: {},
+          paranoid: false
+        });
+      }).then(() => {
+        return ParanoidUser.findAll({
+          paranoid: false,
+          where: {
+            username: 'foo'
+          }
+        });
+      }).then(users => {
+        expect(users).to.have.lengthOf(2);
       });
     });
 
@@ -2692,7 +2776,7 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         type: Sequelize.STRING,
         references: {
           model: 'Users',
-          key:   'UUID'
+          key: 'UUID'
         }
       }
     });
@@ -2742,7 +2826,8 @@ describe(Support.getTestDialectTeaser('Model'), () => {
       this.User = this.sequelize.define('User', {
         id: { type: DataTypes.INTEGER, primaryKey: true },
         aNumber: { type: DataTypes.INTEGER },
-        bNumber: { type: DataTypes.INTEGER }
+        bNumber: { type: DataTypes.INTEGER },
+        cNumber: { type: DataTypes.INTEGER, field: 'c_number'}
       });
 
       const self = this;
@@ -2759,6 +2844,11 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           id: 3,
           aNumber: 0,
           bNumber: 0
+        }, {
+          id: 4,
+          aNumber: 0,
+          bNumber: 0,
+          cNumber: 0
         }]);
       });
     });
@@ -2770,6 +2860,15 @@ describe(Support.getTestDialectTeaser('Model'), () => {
           return self.User.findById(2).then(user3 => {
             expect(user3.aNumber).to.be.equal(0);
           });
+        });
+      });
+    });
+
+    it('uses correct column names for where conditions', function() {
+      const self = this;
+      return this.User.increment(['aNumber'], {by: 2, where: {cNumber: 0}}).then(() => {
+        return self.User.findById(4).then(user4 => {
+          expect(user4.aNumber).to.be.equal(2);
         });
       });
     });
@@ -2891,6 +2990,49 @@ describe(Support.getTestDialectTeaser('Model'), () => {
         return User.increment('aNumber', {by: 1, silent: true, where: { }});
       }).then(() => {
         return expect(User.findById(1)).to.eventually.have.property('updatedAt').equalTime(oldDate);
+      });
+    });
+
+    it('should work with scopes', function() {
+      const User = this.sequelize.define('User', {
+        aNumber: DataTypes.INTEGER,
+        name: DataTypes.STRING
+      }, {
+        scopes: {
+          jeff: {
+            where: {
+              name: 'Jeff'
+            }
+          }
+        }
+      });
+
+      return User.sync({ force: true }).then(() => {
+        return User.bulkCreate([
+          {
+            aNumber: 1,
+            name: 'Jeff'
+          },
+          {
+            aNumber: 3,
+            name: 'Not Jeff'
+          }
+        ]);
+      }).then(() => {
+        return User.scope('jeff').increment('aNumber', {
+        });
+      }).then(() => {
+        return User.scope('jeff').findOne();
+      }).then(jeff => {
+        expect(jeff.aNumber).to.equal(2);
+      }).then(() => {
+        return User.findOne({
+          where: {
+            name: 'Not Jeff'
+          }
+        });
+      }).then(notJeff => {
+        expect(notJeff.aNumber).to.equal(3);
       });
     });
   });

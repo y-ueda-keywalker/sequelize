@@ -46,7 +46,7 @@ User
 
     /*
      findOrCreate returns an array containing the object that was found or created and a boolean that will be true if a new object was created and false if not, like so:
-     
+
     [ {
         username: 'sdepold',
         job: 'Technical Lead JavaScript',
@@ -55,7 +55,7 @@ User
         updatedAt: Fri Mar 22 2013 21: 28: 34 GMT + 0100(CET)
       },
       true ]
-      
+
  In the example above, the "spread" on line 39 divides the array into its 2 parts and passes them as arguments to the callback function defined beginning at line 39, which treats them as "user" and "created" in this case. (So "user" will be the object from index 0 of the returned array and "created" will equal "true".)
     */
   })
@@ -95,14 +95,15 @@ This is a convenience method that combines`findAll` and `count` (see below) this
 
 The success handler will always receive an object with two properties:
 
-* `count` - an integer, total number records matching the where clause
-* `rows` - an array of objects, the records matching the where clause, within the limit and offset range
+* `count` - an integer, total number records matching the where clause and other filters due to associations
+* `rows` - an array of objects, the records matching the where clause and other filters due to associations, within the limit and offset range
+
 ```js
 Project
   .findAndCountAll({
      where: {
         title: {
-          $like: 'foo%'
+          [Op.like]: 'foo%'
         }
      },
      offset: 10,
@@ -114,7 +115,7 @@ Project
   });
 ```
 
-`findAndCountAll` also supports includes. Only the includes that are marked as `required` will be added to the count part:
+It support includes. Only the includes that are marked as `required` will be added to the count part:
 
 Suppose you want to find all users who have a profile attached:
 ```js
@@ -168,28 +169,28 @@ Project.findAll({ where: { id: [1,2,3] } }).then(projects => {
 Project.findAll({
   where: {
     id: {
-      $and: {a: 5}           // AND (a = 5)
-      $or: [{a: 5}, {a: 6}]  // (a = 5 OR a = 6)
-      $gt: 6,                // id > 6
-      $gte: 6,               // id >= 6
-      $lt: 10,               // id < 10
-      $lte: 10,              // id <= 10
-      $ne: 20,               // id != 20
-      $between: [6, 10],     // BETWEEN 6 AND 10
-      $notBetween: [11, 15], // NOT BETWEEN 11 AND 15
-      $in: [1, 2],           // IN [1, 2]
-      $notIn: [1, 2],        // NOT IN [1, 2]
-      $like: '%hat',         // LIKE '%hat'
-      $notLike: '%hat'       // NOT LIKE '%hat'
-      $iLike: '%hat'         // ILIKE '%hat' (case insensitive)  (PG only)
-      $notILike: '%hat'      // NOT ILIKE '%hat'  (PG only)
-      $overlap: [1, 2]       // && [1, 2] (PG array overlap operator)
-      $contains: [1, 2]      // @> [1, 2] (PG array contains operator)
-      $contained: [1, 2]     // <@ [1, 2] (PG array contained by operator)
-      $any: [2,3]            // ANY ARRAY[2, 3]::INTEGER (PG only)
+      [Op.and]: {a: 5},           // AND (a = 5)
+      [Op.or]: [{a: 5}, {a: 6}],  // (a = 5 OR a = 6)
+      [Op.gt]: 6,                // id > 6
+      [Op.gte]: 6,               // id >= 6
+      [Op.lt]: 10,               // id < 10
+      [Op.lte]: 10,              // id <= 10
+      [Op.ne]: 20,               // id != 20
+      [Op.between]: [6, 10],     // BETWEEN 6 AND 10
+      [Op.notBetween]: [11, 15], // NOT BETWEEN 11 AND 15
+      [Op.in]: [1, 2],           // IN [1, 2]
+      [Op.notIn]: [1, 2],        // NOT IN [1, 2]
+      [Op.like]: '%hat',         // LIKE '%hat'
+      [Op.notLike]: '%hat',       // NOT LIKE '%hat'
+      [Op.iLike]: '%hat',         // ILIKE '%hat' (case insensitive)  (PG only)
+      [Op.notILike]: '%hat',      // NOT ILIKE '%hat'  (PG only)
+      [Op.overlap]: [1, 2],       // && [1, 2] (PG array overlap operator)
+      [Op.contains]: [1, 2],      // @> [1, 2] (PG array contains operator)
+      [Op.contained]: [1, 2],     // <@ [1, 2] (PG array contained by operator)
+      [Op.any]: [2,3]            // ANY ARRAY[2, 3]::INTEGER (PG only)
     },
     status: {
-      $not: false,           // status NOT FALSE
+      [Op.not]: false           // status NOT FALSE
     }
   }
 })
@@ -197,15 +198,15 @@ Project.findAll({
 
 ### Complex filtering / OR / NOT queries
 
-It's possible to do complex where queries with multiple levels of nested AND, OR and NOT conditions. In order to do that you can use `$or`, `$and` or `$not`:
+It's possible to do complex where queries with multiple levels of nested AND, OR and NOT conditions. In order to do that you can use `or`, `and` or `not` `Operators`:
 
 ```js
 Project.findOne({
   where: {
     name: 'a project',
-    $or: [
+    [Op.or]: [
       { id: [1,2,3] },
-      { id: { $gt: 10 } }
+      { id: { [Op.gt]: 10 } }
     ]
   }
 })
@@ -214,9 +215,9 @@ Project.findOne({
   where: {
     name: 'a project',
     id: {
-      $or: [
+      [Op.or]: [
         [1,2,3],
-        { $gt: 10 }
+        { [Op.gt]: 10 }
       ]
     }
   }
@@ -235,15 +236,15 @@ WHERE (
 LIMIT 1;
 ```
 
-`$not` example:
+`not` example:
 
 ```js
 Project.findOne({
   where: {
     name: 'a project',
-    $not: [
+    [Op.not]: [
       { id: [1,2,3] },
-      { array: { $contains: [3,4,5] } }
+      { array: { [Op.contains]: [3,4,5] } }
     ]
   }
 });
@@ -291,20 +292,18 @@ Notice how in the two examples above, the string provided is inserted verbatim i
 ```js
 something.findOne({
   order: [
-    'name',
     // will return `name`
-    'username DESC',
-    // will return `username DESC` -- i.e. don't do it!
-    ['username', 'DESC'],
+    ['name'],
     // will return `username` DESC
-    sequelize.fn('max', sequelize.col('age')),
+    ['username', 'DESC'],
     // will return max(`age`)
-    [sequelize.fn('max', sequelize.col('age')), 'DESC'],
+    sequelize.fn('max', sequelize.col('age')),
     // will return max(`age`) DESC
-    [sequelize.fn('otherfunction', sequelize.col('col1'), 12, 'lalala'), 'DESC'],
+    [sequelize.fn('max', sequelize.col('age')), 'DESC'],
     // will return otherfunction(`col1`, 12, 'lalala') DESC
-    [sequelize.fn('otherfunction', sequelize.fn('awesomefunction', sequelize.col('col'))), 'DESC']
+    [sequelize.fn('otherfunction', sequelize.col('col1'), 12, 'lalala'), 'DESC'],
     // will return otherfunction(awesomefunction(`col`)) DESC, This nesting is potentially infinite!
+    [sequelize.fn('otherfunction', sequelize.fn('awesomefunction', sequelize.col('col'))), 'DESC']
   ]
 })
 ```
@@ -316,7 +315,7 @@ To recap, the elements of the order/group array can be the following:
 * Object -
   * Raw will be added verbatim without quoting
   * Everything else is ignored, and if raw is not set, the query will fail
-* Sequelize.fn and Sequelize.col returns functions and quoted cools
+* Sequelize.fn and Sequelize.col returns functions and quoted column names
 
 ### Raw queries
 
@@ -338,7 +337,7 @@ Project.count().then(c => {
   console.log("There are " + c + " projects!")
 })
 
-Project.count({ where: {'id': {$gt: 25}} }).then(c => {
+Project.count({ where: {'id': {[Op.gt]: 25}} }).then(c => {
   console.log("There are " + c + " projects with an id greater than 25.")
 })
 ```
@@ -358,7 +357,7 @@ Project.max('age').then(max => {
   // this will return 40
 })
 
-Project.max('age', { where: { age: { lt: 20 } } }).then(max => {
+Project.max('age', { where: { age: { [Op.lt]: 20 } } }).then(max => {
   // will be 10
 })
 ```
@@ -378,7 +377,7 @@ Project.min('age').then(min => {
   // this will return 5
 })
 
-Project.min('age', { where: { age: { $gt: 5 } } }).then(min => {
+Project.min('age', { where: { age: { [Op.gt]: 5 } } }).then(min => {
   // will be 10
 })
 ```
@@ -399,7 +398,7 @@ Project.sum('age').then(sum => {
   // this will return 55
 })
 
-Project.sum('age', { where: { age: { $gt: 5 } } }).then(sum => {
+Project.sum('age', { where: { age: { [Op.gt]: 5 } } }).then(sum => {
   // will be 50
 })
 ```
@@ -550,7 +549,7 @@ User.findAll({
     include: [{
         model: Tool,
         as: 'Instruments',
-        where: { name: { $like: '%ooth%' } }
+        where: { name: { [Op.like]: '%ooth%' } }
     }]
 }).then(users => {
     console.log(JSON.stringify(users))
@@ -597,7 +596,7 @@ To move the where conditions from an included model from the `ON` condition to t
 ```js
 User.findAll({
     where: {
-        '$Instruments.name$': { $iLike: '%ooth%' }
+        '$Instruments.name$': { [Op.iLike]: '%ooth%' }
     },
     include: [{
         model: Tool,
@@ -653,7 +652,7 @@ In case you want to eager load soft deleted records you can do that by setting `
 User.findAll({
     include: [{
         model: Tool,
-        where: { name: { $like: '%ooth%' } },
+        where: { name: { [Op.like]: '%ooth%' } },
         paranoid: false // query and loads the soft deleted records
     }]
 });

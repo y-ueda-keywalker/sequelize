@@ -9,7 +9,33 @@ Sequelize V4 is a major release and it introduces new features and breaking chan
 - Removed MariaDB dialect. This was just a thin wrapper around MySQL, so using `dialect: 'mysql'` instead should work with no further changes
 - Removed default `REPEATABLE_READ` transaction isolation. The isolation level now defaults to that of the database. Explicitly pass the required isolation level when initiating the transaction.
 - Removed support for `pool: false`. To use a single connection, set `pool.max` to 1.
+- Removed support for old connection pooling configuration keys. Instead of
+  ```js
+  pool: {
+    maxIdleTime: 30000,
+    minConnections: 20,
+    maxConnections: 30
+  }
+  ```
+
+  use
+
+  ```js
+  pool: {
+    idle: 30000,
+    min: 20,
+    max: 30
+  }
+  ```
+
 - (MySQL) BIGINT now gets converted to string when number is too big
+- (MySQL) `DECIMAL` and `NEWDECIMAL` types now returned as String unless
+  ```js
+  dialectOptions: {
+    decimalNumbers: true
+  }
+  ```
+  is specified.
 - Removed support for referencesKey, use a references object
   ```js
   references: {
@@ -71,7 +97,7 @@ Sequelize V4 is a major release and it introduces new features and breaking chan
 - `DataTypes.DECIMAL` returns string for MySQL and Postgres.
 - `DataTypes.DATE` now uses `DATETIMEOFFSET` instead of `DATETIME2` sql datatype in case of MSSQL to record timezone. To migrate existing `DATETIME2` columns into `DATETIMEOFFSET`, see [#7201](https://github.com/sequelize/sequelize/pull/7201#issuecomment-278899803).
 - `options.order` now only accepts values with type of array or Sequelize method. Support for string values (ie `{order: 'name DESC'}`) has been deprecated.
-- With `BelongsToMany` relationships `add/set/create` setters now set through attributes by passing them as `options.through` (previously second argument was used as through attributes, now its considered options with `through` being a sub option)
+- With `BelongsToMany` relationships `add/set/create` setters now set through attributes by passing them as `options.through` (previously second argument was used as through attributes, now it's considered options with `through` being a sub option)
 
   Previous:
   ```js
@@ -100,7 +126,7 @@ Sequelize V4 is a major release and it introduces new features and breaking chan
   ```
   You can then define custom methods, class methods and getters/setter directly in the class.
   This also enables more usage patterns, for example with [decorators](https://www.npmjs.com/package/sequelize-decorators).
-- Added `DEBUG` support. You can now use `DEBUG=sequelize* node app.js` to enable logging for all sequlize operations. To filter logged queries, use `DEBUG=sequelize:sql:mssql sequelize:connection*` to log generated SQL queries, connection info etc.
+- Added `DEBUG` support. You can now use `DEBUG=sequelize* node app.js` to enable logging for all sequelize operations. To filter logged queries, use `DEBUG=sequelize:sql:mssql sequelize:connection*` to log generated SQL queries, connection info etc.
 - `JSON` datatype support has been added for `SQLite`
 - `UPSERT` is now supported on `MSSQL` using `MERGE` statement.
 - Transactions are now fully supported on `MSSQL`.

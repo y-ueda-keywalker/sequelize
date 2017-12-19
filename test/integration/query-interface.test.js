@@ -138,6 +138,8 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
             tableName: 'table'
           }).then(indexes => {
             expect(indexes.length).to.eq(1);
+            const index = indexes[0];
+            expect(index.name).to.eq('table_name_is_admin');
           });
         });
       });
@@ -229,17 +231,17 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
     it('should correctly determine the primary key columns', function() {
       const self = this;
       const Country = self.sequelize.define('_Country', {
-        code:     {type: DataTypes.STRING, primaryKey: true },
-        name:     {type: DataTypes.STRING, allowNull: false}
+        code: {type: DataTypes.STRING, primaryKey: true },
+        name: {type: DataTypes.STRING, allowNull: false}
       }, { freezeTableName: true });
       const Alumni = self.sequelize.define('_Alumni', {
-        year:     {type: DataTypes.INTEGER, primaryKey: true },
-        num:      {type: DataTypes.INTEGER, primaryKey: true },
+        year: {type: DataTypes.INTEGER, primaryKey: true },
+        num: {type: DataTypes.INTEGER, primaryKey: true },
         username: {type: DataTypes.STRING, allowNull: false, unique: true },
-        dob:      {type: DataTypes.DATEONLY, allowNull: false },
-        dod:      {type: DataTypes.DATEONLY, allowNull: true },
-        city:     {type: DataTypes.STRING, allowNull: false},
-        ctrycod:  {type: DataTypes.STRING, allowNull: false,
+        dob: {type: DataTypes.DATEONLY, allowNull: false },
+        dod: {type: DataTypes.DATEONLY, allowNull: true },
+        city: {type: DataTypes.STRING, allowNull: false},
+        ctrycod: {type: DataTypes.STRING, allowNull: false,
           references: { model: Country, key: 'code'}}
       }, { freezeTableName: true });
 
@@ -578,7 +580,7 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
           type: DataTypes.INTEGER,
           references: {
             model: 'level',
-            key:   'id'
+            key: 'id'
           },
           onUpdate: 'cascade',
           onDelete: 'cascade'
@@ -616,7 +618,7 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
           type: DataTypes.INTEGER,
           references: {
             model: 'level',
-            key:   'id'
+            key: 'id'
           },
           onUpdate: 'cascade',
           onDelete: 'set null'
@@ -687,8 +689,12 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
             type: DataTypes.INTEGER,
             references: {
               model: 'users',
-              key:   'id'
+              key: 'id'
             }
+          },
+          email: {
+            type: DataTypes.STRING,
+            unique: true
           }
         });
       });
@@ -730,6 +736,19 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
         });
       });
 
+      // From MSSQL documentation on ALTER COLUMN:
+      //    The modified column cannot be any one of the following:
+      //      - Used in a CHECK or UNIQUE constraint.
+      // https://docs.microsoft.com/en-us/sql/t-sql/statements/alter-table-transact-sql#arguments
+      if (dialect !== 'mssql') {
+        it('should be able to remove a column with unique contraint', function() {
+          return this.queryInterface.removeColumn('users', 'email').bind(this).then(function() {
+            return this.queryInterface.describeTable('users');
+          }).then(table => {
+            expect(table).to.not.have.property('email');
+          });
+        });
+      }
     });
 
     describe('(with a schema)', () => {
@@ -750,6 +769,10 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
             },
             lastName: {
               type: DataTypes.STRING
+            },
+            email: {
+              type: DataTypes.STRING,
+              unique: true
             }
           });
         });
@@ -798,6 +821,26 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
           expect(table).to.not.have.property('id');
         });
       });
+
+      // From MSSQL documentation on ALTER COLUMN:
+      //    The modified column cannot be any one of the following:
+      //      - Used in a CHECK or UNIQUE constraint.
+      // https://docs.microsoft.com/en-us/sql/t-sql/statements/alter-table-transact-sql#arguments
+      if (dialect !== 'mssql') {
+        it('should be able to remove a column with unique contraint', function() {
+          return this.queryInterface.removeColumn({
+            tableName: 'users',
+            schema: 'archive'
+          }, 'email').bind(this).then(function() {
+            return this.queryInterface.describeTable({
+              tableName: 'users',
+              schema: 'archive'
+            });
+          }).then(table => {
+            expect(table).to.not.have.property('email');
+          });
+        });
+      }
     });
   });
 
@@ -820,14 +863,14 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
             type: DataTypes.INTEGER,
             references: {
               model: 'users',
-              key:   'id'
+              key: 'id'
             }
           },
           operator: {
             type: DataTypes.INTEGER,
             references: {
               model: 'users',
-              key:   'id'
+              key: 'id'
             },
             onUpdate: 'cascade'
           },
@@ -835,7 +878,7 @@ describe(Support.getTestDialectTeaser('QueryInterface'), () => {
             type: DataTypes.INTEGER,
             references: {
               model: 'users',
-              key:   'id'
+              key: 'id'
             },
             onUpdate: 'cascade',
             onDelete: 'set null'

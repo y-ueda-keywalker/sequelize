@@ -9,7 +9,7 @@ Sequelize is available via NPM and Yarn.
 $ npm install --save sequelize
 
 # And one of the following:
-$ npm install --save pg pg-hstore
+$ npm install --save pg@6 pg-hstore #pg@7 is currently not supported
 $ npm install --save mysql2
 $ npm install --save sqlite3
 $ npm install --save tedious // MSSQL
@@ -29,6 +29,7 @@ $ yarn add tedious // MSSQL
 Sequelize will setup a connection pool on initialization so you should ideally only ever create one instance per database if you're connecting to the DB from a single process. If you're connecting to the DB from multiple processes, you'll have to create one instance per process, but each instance should have a maximum connection pool size of "max connection pool size divided by number of instances".  So, if you wanted a max connection pool size of 90 and you had 3 worker processes, each process's instance should have a max connection pool size of 30.
 
 ```js
+const Sequelize = require('sequelize');
 const sequelize = new Sequelize('database', 'username', 'password', {
   host: 'localhost',
   dialect: 'mysql'|'sqlite'|'postgres'|'mssql',
@@ -36,6 +37,7 @@ const sequelize = new Sequelize('database', 'username', 'password', {
   pool: {
     max: 5,
     min: 0,
+    acquire: 30000,
     idle: 10000
   },
 
@@ -119,7 +121,12 @@ const Post = sequelize.define('post', {}, {
 
 ## Promises
 
-Sequelize uses promises to control async control-flow. If you are unfamiliar with how promises work, don't worry, you can read up on them [here](https://github.com/wbinnssmith/awesome-promises) and [here](http://bluebirdjs.com/docs/why-promises.html).
+Sequelize uses [Bluebird](http://bluebirdjs.com) promises to control async control-flow.
+
+**Note:** _Sequelize use independent copy of Bluebird instance. You can access it using
+ `Sequelize.Promise` if you want to set any Bluebird specific options_
+
+If you are unfamiliar with how promises work, don't worry, you can read up on them [here](http://bluebirdjs.com/docs/why-promises.html).
 
 Basically, a promise represents a value which will be present at some point - "I promise you I will give you a result or an error at some point". This means that
 
@@ -146,4 +153,4 @@ user = await User.findOne()
 console.log(user.get('firstName'));
 ```
 
-Once you've got the hang of what promises are and how they work, use the [bluebird API reference](http://bluebirdjs.com/docs/api-reference.html) as your go-to tool. In particular, you'll probably be using [`.all`](http://bluebirdjs.com/docs/api/promise.all.html) a lot.  
+Once you've got the hang of what promises are and how they work, use the [bluebird API reference](http://bluebirdjs.com/docs/api-reference.html) as your go-to tool. In particular, you'll probably be using [`.all`](http://bluebirdjs.com/docs/api/promise.all.html) a lot.

@@ -47,10 +47,10 @@ Before continuing further we will need to tell CLI how to connect to database. T
     dialect: 'mysql'
   },
   production: {
-    username: 'root',
-    password: null,
-    database: 'database_production',
-    host: '127.0.0.1',
+    username: process.env.PROD_DB_USERNAME,
+    password: process.env.PROD_DB_PASSWORD,
+    database: process.env.PROD_DB_NAME,
+    host: process.env.PROD_DB_HOSTNAME,
     dialect: 'mysql'
   }
 }
@@ -79,7 +79,7 @@ This will do following
 - Create a model file `user` in `models` folder
 - Create a migration file with name like `XXXXXXXXXXXXXX-create-user.js` in `migrations` folder
 
-**Note:** _Sequelize will only use Model files, its the table representation. On other hand migration file is a change in that model or more specifically that table, used by CLI. Treat migrations like a commit or a log for some change in database._
+**Note:** _Sequelize will only use Model files, it's the table representation. On other hand migration file is a change in that model or more specifically that table, used by CLI. Treat migrations like a commit or a log for some change in database._
 
 ### Running Migrations
 Now till this step CLI haven't inserted anything into database. We have just created required model and migration files for our first model `User`. Now to actually create that table in database you need to run `db:migrate` command.
@@ -92,7 +92,7 @@ This command will execute these steps
 
 - Will ensure a table called `SequelizeMeta` in database. This table is used to record which migration have ran on current database
 - Start looking for any migration files which haven't ran yet. This is possible by checking `SequelizeMeta` table. In this case it will run `XXXXXXXXXXXXXX-create-user.js` migration, which we created in last step.
-- Creates a table called `User` with all columns as specified in its migration file.
+- Creates a table called `Users` with all columns as specified in its migration file.
 
 ### Undoing Migrations
 Now our table has been created and saved in database. With migration you can revert to old state by just running a command.
@@ -129,7 +129,7 @@ Now we should edit this file to insert demo user to `User` table.
 
 module.exports = {
   up: (queryInterface, Sequelize) => {
-    return queryInterface.bulkInsert('User', [{
+    return queryInterface.bulkInsert('Users', [{
         firstName: 'John',
         lastName: 'Doe',
         email: 'demo@demo.com'
@@ -137,7 +137,7 @@ module.exports = {
   },
 
   down: (queryInterface, Sequelize) => {
-    return queryInterface.bulkDelete('User', null, {});
+    return queryInterface.bulkDelete('Users', null, {});
   }
 };
 
@@ -147,7 +147,7 @@ module.exports = {
 In last step you have create a seed file. Its still not committed to database. To do that we need to run a simple command.
 
 ```bash
-$ node_modules/.bin/sequelize db:seed
+$ node_modules/.bin/sequelize db:seed:all
 ```
 
 This will execute that seed file and you will have a demo user inserted into `User` table.
@@ -166,7 +166,7 @@ node_modules/.bin/sequelize db:seed:undo
 If you wish to undo all seeds
 
 ```bash
-node_modules/.bin/sequelize db:migrate:undo:all
+node_modules/.bin/sequelize db:seed:undo:all
 ```
 
 ## Advance Topics
@@ -323,7 +323,7 @@ module.exports = {
 ```
 
 ### Specifying Dialect Options
-Sometime you want to specify a dialectOption, if its a general config you can just add it in `config/config.json`. Sometime you want to execute some code to get dialectOptions, you should use dynamic config file for those cases.
+Sometime you want to specify a dialectOption, if it's a general config you can just add it in `config/config.json`. Sometime you want to execute some code to get dialectOptions, you should use dynamic config file for those cases.
 
 ```json
 {

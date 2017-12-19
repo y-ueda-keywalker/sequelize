@@ -1,4 +1,5 @@
 # Scopes
+
 Scoping allows you to define commonly used queries that you can easily use later. Scopes can include all the same attributes as regular finders, `where`, `include`, `limit` etc.
 
 ## Definition
@@ -36,7 +37,7 @@ const Project = sequelize.define('project', {
       return {
         where: {
           accessLevel: {
-            $gte: value
+            [Op.gte]: value
           }
         }
       }
@@ -86,7 +87,7 @@ DeletedProjects.findAll();
 DeletedProjects.findAll();
 ```
 
-Scopes apply to `.find`, `.findAll`, `.count`, `.update` and `.destroy`.
+Scopes apply to `.find`, `.findAll`, `.count`, `.update`, `.increment` and `.destroy`.
 
 Scopes which are functions can be invoked in two ways. If the scope does not take any arguments it can be invoked as normally. If the scope takes arguments, pass an object:
 
@@ -128,7 +129,7 @@ When invoking several scopes, keys from subsequent scopes will overwrite previou
     where: {
       firstName: 'bob',
       age: {
-        $gt: 20
+        [Op.gt]: 20
       }
     },
     limit: 2
@@ -136,7 +137,7 @@ When invoking several scopes, keys from subsequent scopes will overwrite previou
   scope2: {
     where: {
       age: {
-        $gt: 30
+        [Op.gt]: 30
       }
     },
     limit: 10
